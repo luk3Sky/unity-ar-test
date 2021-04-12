@@ -10,4 +10,4 @@ An Augmented Reality (AR) Project to test Vuforia Engine in Unity.
  -  Vuforia 9.8.5
 
 ### Assets
- - "Pusheen" (https://skfb.ly/6nzBI) by JSTKS is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+ - "025 - Pikachu" (https://skfb.ly/AwEN) by Frédéric Cambon is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
