@@ -6,10 +6,14 @@ All Rights Reserved.
 Confidential and Proprietary - Protected under copyright and other laws.
 ==============================================================================*/
 
+using System;
+using System.IO;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Networking;
+using System.Collections.Generic;
 using Vuforia;
-using System;
 
 /// <summary>
 /// A custom handler that implements the ITrackableEventHandler interface.
@@ -166,7 +170,10 @@ public class CustomTrackableEventHandler : MonoBehaviour
 
             // Enable rendering:
             foreach (var component in rendererComponents)
+            {
+                Debug.Log("Component: " + component);
                 component.enabled = true;
+            }
 
             // Enable colliders:
             foreach (var component in colliderComponents)
@@ -194,6 +201,8 @@ public class CustomTrackableEventHandler : MonoBehaviour
             foreach (var component in rendererComponents)
                 component.enabled = false;
 
+            DownloadAndCacheAssetBundle("https://github.com/luk3Sky/unity-ar-test/raw/main/Unity%20Vuforia%20AR%20Project/Assets/AssetBundles/pikachu-Android", ".");
+
             // Disable colliders:
             foreach (var component in colliderComponents)
                 component.enabled = false;
@@ -205,5 +214,61 @@ public class CustomTrackableEventHandler : MonoBehaviour
 
         if (OnTargetLost != null)
             OnTargetLost.Invoke();
+    }
+
+    IEnumerator DownloadAndCacheAssetBundle(string uri, string manifestBundlePath)
+    {
+        // Load the manifest
+        AssetBundle manifestBundle = AssetBundle.LoadFromFile(manifestBundlePath);
+        AssetBundleManifest manifest = manifestBundle.LoadAsset<AssetBundleManifest>("AssetBundleManifest");
+
+        // Create new cache
+        string today = DateTime.Today.ToLongDateString();
+        Directory.CreateDirectory(today);
+        Cache newCache = Caching.AddCache(today);
+
+        // Set current cache for writing to the new cache if the cache is valid
+        if (newCache.valid)
+            Caching.currentCacheForWriting = newCache;
+
+        // Download the bundle
+        Hash128 hash = manifest.GetAssetBundleHash("pikachu");
+        UnityWebRequest request = UnityWebRequestAssetBundle.GetAssetBundle(uri, hash, 0);
+        yield return request.SendWebRequest();
+        AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(request);
+
+        // Get all the cached versions
+        List<Hash128> listOfCachedVersions = new List<Hash128>();
+        Caching.GetCachedVersions(bundle.name, listOfCachedVersions);
+
+        if (!ContainsAssetBundleToLoad(bundle))     // Or any conditions you want to check on your new asset bundle
+        {
+            // If our criteria wasn't met, we can remove the new cache and revert back to the most recent one
+            Caching.currentCacheForWriting = Caching.GetCacheAt(Caching.cacheCount);
+            Caching.RemoveCache(newCache);
+
+            for (int i = listOfCachedVersions.Count - 1; i > 0; i--)
+            {
+                // Load a different bundle from a different cache
+                request = UnityWebRequestAssetBundle.GetAssetBundle(uri, listOfCachedVersions[i], 0);
+                yield return request.SendWebRequest();
+                bundle = DownloadHandlerAssetBundle.GetContent(request);
+
+                // Check and see if the newly loaded bundle from the cache meets your criteria
+                if (ContainsAssetBundleToLoad(bundle))
+                    break;
+            }
+        }
+        else
+        {
+            // This is if we only want to keep 5 local caches at any time
+            if (Caching.cacheCount > 5)
+                Caching.RemoveCache(Caching.GetCacheAt(1));     // Removes the oldest user created cache
+        }
+    }
+
+    bool ContainsAssetBundleToLoad(AssetBundle bundle)
+    {
+        return (bundle.LoadAsset<GameObject>("pikachu-Android") != null);     // check if the "pikachu-Android" asset exists in the bundle
     }
 }
