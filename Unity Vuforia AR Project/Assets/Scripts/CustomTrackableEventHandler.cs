@@ -201,7 +201,7 @@ public class CustomTrackableEventHandler : MonoBehaviour
             foreach (var component in rendererComponents)
                 component.enabled = false;
 
-            DownloadAndCacheAssetBundle("https://github.com/luk3Sky/unity-ar-test/raw/main/Unity%20Vuforia%20AR%20Project/Assets/AssetBundles/pikachu-Android", ".");
+            // DownloadAndCacheAssetBundle("https://github.com/luk3Sky/unity-ar-test/raw/main/Unity%20Vuforia%20AR%20Project/Assets/AssetBundles/pikachu-Android", ".");
 
             // Disable colliders:
             foreach (var component in colliderComponents)
